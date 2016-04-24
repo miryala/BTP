@@ -1,13 +1,11 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
-
-
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
-#include <CL/cl.h>	
-#endif
+#include <CL/cl.h>
+#endif	
  
 #define MAX_SOURCE_SIZE (0x100000)
 
@@ -77,7 +75,7 @@ void rightRotate(int *RC,int *LC,int *P,int y,int *R){
 void RBInsert(long value,int counter,int *node,int *LC,int *RC,int *P,int *C,int *R){
 	
 	int x,y;
-	x=1;
+	x=*R;
 	y=0;
 	while( node[x] != -1){
 		y = x;
@@ -162,7 +160,12 @@ int main(int argc, char **argv)
 		}
 		j += 2;
 	}
-
+	int per = 1;
+	int time1=0;
+	printf("X	Y\n");
+	while(1){
+	printf("%d	",per);
+	n = (i/100)*per;
 	int counter = 1;
 	int node[i+n+1];
 	int LC[i+n+1];
@@ -170,6 +173,7 @@ int main(int argc, char **argv)
 	int P[i+n+1];
 	int C[i+n+1];
 	int L[i+n+1];
+	int trackList[n];
 	int R = 1;
 	for (j=0; j<i+n+1; j++){
 		node[j] = -1;
@@ -191,7 +195,8 @@ int main(int argc, char **argv)
 	}
 	t = clock() - t;
         double time_taken = ((double)t); // in seconds
-	printf(" %f micro seconds to execute \n", time_taken);
+	//printf(" %f micro seconds to execute \n", time_taken);
+	time1 += time_taken;
 	/*for (j=1;j<i+1;j++){
 		printf( "j:%d node:%d LC:%d RC:%d P:%d C:%d\n",j,node[j],LC[j],RC[j],P[j],C[j]);	
 	}*/
@@ -200,7 +205,8 @@ int main(int argc, char **argv)
 	for(j=0;j<n;j++){
 		value =  rand_range_re(&seed,r);
 		WL[j] = value;
-		printf("%ld   ",value);
+		trackList[j] = 0;
+		//printf("%ld   ",value);
 	}
 /************************************************************* OpenCL ************************************************************************************/
 
@@ -232,7 +238,6 @@ int main(int argc, char **argv)
  	int root[1];
 	int cnt[1]; 
 	int size[1];
-	int trackList[n];
 	root[0] = R;
 	cnt[0] = counter;
 	size[0] = n;
@@ -313,8 +318,25 @@ int main(int argc, char **argv)
 	kernel = clCreateKernel(program, "rbtree", &ret);
 	program2 = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
 	ret = clBuildProgram(program2, 1, &device_id, NULL, NULL, NULL);
+	if (ret != CL_SUCCESS) {
+ 
+        // check build error and build status first
+        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_STATUS, 
+                sizeof(cl_build_status), &status, NULL);
+ 
+        // check build log
+        clGetProgramBuildInfo(program, device_id, 
+                CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
+        programLog = (char*) calloc (logSize+1, sizeof(char));
+        clGetProgramBuildInfo(program, device_id, 
+                CL_PROGRAM_BUILD_LOG, logSize+1, programLog, NULL);
+        printf("Build failed; error=%d, status=%d, programLog:nn%s", 
+                ret, status, programLog);
+        free(programLog);
+ 
+    }
 	kernel2 = clCreateKernel(program2, "knl2", &ret);
-	printf("ret val:%d\n",ret);
+	//printf("ret val:%d\n",ret);
 	/* Set OpenCL kernel arguments */
 	ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&nodemobj);
 	ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&LCmobj);
@@ -328,14 +350,18 @@ int main(int argc, char **argv)
 	ret = clSetKernelArg(kernel, 9, sizeof(cl_mem), (void *)&sizemobj);
  	ret = clSetKernelArg(kernel, 10, sizeof(cl_mem), (void *)&trackmobj);
 	size_t local_item_size = 64;
-	size_t global_item_size = 64;
+	size_t global_item_size = (n/64+1)*64;
 			
 	/* Execute OpenCL kernel as data parallel */
+	clock_t t1;
+    t1 = clock();
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
 	&global_item_size, &local_item_size, 0, NULL, NULL);
  	ret = clFinish(command_queue);
-	
-	/*while(1){
+	int count = 0;
+	int extra = 0;
+	while(1){
+		count++;
 		ret = clSetKernelArg(kernel2, 0, sizeof(cl_mem), (void *)&nodemobj);
 		ret = clSetKernelArg(kernel2, 1, sizeof(cl_mem), (void *)&LCmobj);
 		ret = clSetKernelArg(kernel2, 2, sizeof(cl_mem), (void *)&RCmobj);
@@ -348,15 +374,28 @@ int main(int argc, char **argv)
 		ret = clSetKernelArg(kernel2, 9, sizeof(cl_mem), (void *)&sizemobj);
 		ret = clSetKernelArg(kernel2, 10, sizeof(cl_mem), (void *)&trackmobj);
 		local_item_size = 64;
-		global_item_size = 64;
+		global_item_size = (n/64+1)*64;
 		ret = clEnqueueNDRangeKernel(command_queue, kernel2, 1, NULL,
 		&global_item_size, &local_item_size, 0, NULL, NULL);
-		for(j=0;j<n;j++)
-		if(WL[j] >= 0)
-			j = n+5;
-		if(j <= n)
+		ret = clFinish(command_queue);
+		ret = clEnqueueReadBuffer(command_queue, WLmobj, CL_TRUE, 0, (n)*sizeof(long), WL, 0, NULL, NULL);
+		int flag = 1;
+		clock_t t3;
+		t3 = clock();
+		for(j=0;j<n;j++){
+			if(WL[j] != -1){
+				flag = 0;
+				break;
+			}
+		}
+		t3 = clock() - t3;
+		extra += t3;
+		if(flag == 1 || count > 52)
 			break;
-	}*/
+		//printf("iteration count: %d",count);
+	}
+	t1 = clock() - t1;
+    double time_taken2 = ((double)t1); // in seconds
 	/* Transfer result to host */
 	long w[n];
 	ret = clEnqueueReadBuffer(command_queue, nodemobj, CL_TRUE, 0, (i+n+1)*sizeof(int), node, 0, NULL, NULL);
@@ -365,16 +404,18 @@ int main(int argc, char **argv)
 	ret = clEnqueueReadBuffer(command_queue, Cmobj, CL_TRUE, 0, (i+n+1)*sizeof(int), C, 0, NULL, NULL);
 	ret = clEnqueueReadBuffer(command_queue, Pmobj, CL_TRUE, 0, (i+n+1)*sizeof(int), P, 0, NULL, NULL);
 	ret = clEnqueueReadBuffer(command_queue, RCmobj, CL_TRUE, 0, (i+n+1)*sizeof(int), RC, 0, NULL, NULL);
-
-	printf("new\n");	
+	ret = clEnqueueReadBuffer(command_queue, Lmobj, CL_TRUE, 0, (i+n+1)*sizeof(int), L, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(command_queue, trackmobj, CL_TRUE, 0, (n)*sizeof(int), trackList, 0, NULL, NULL);
+	
  	/*for (j=1;j<i+n+1;j++){
 		printf( "j:%d node:%d\n",j,node[j]	);	
 	}*/
-	for (j=1;j<i+n+1;j++){
-		printf( "j:%d node:%d LC:%d RC:%d P:%d C:%d\n",j,node[j],LC[j],RC[j],P[j],C[j]);	
+	/*for (j=0;j<i+n+1;j++){
+		printf( "j:%d node:%d LC:%d RC:%d P:%d C:%d L:%d\n",j,node[j],LC[j],RC[j],P[j],C[j],L[j]);	
 	}
  	for(j=0;j<n;j++)
-	printf("WL:%ld  ",w[j]);
+	printf("WL:%ld--TL:%d  ",w[j],trackList[j]);*/
+	printf("%f\n", time_taken2);
 	/* Finalization */
 	ret = clFlush(command_queue);	
 	ret = clFinish(command_queue);
@@ -389,7 +430,10 @@ int main(int argc, char **argv)
 	ret = clReleaseContext(context);	
  
 	free(source_str); 
-	return 0;
+	if(per>50)
+		break;
+	per++;
+	}
 /*********************************************************************************************/
-
+return 0;
 }
