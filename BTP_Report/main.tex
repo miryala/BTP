@@ -7,6 +7,7 @@
  
 \newcommand{\source}[1]{\caption*{Source: {#1}} }
 \usepackage{graphicx}
+\usepackage{caption}
 \usepackage{epstopdf}
 \usepackage[hypertex]{hyperref} % hyperlinks for references.
 \usepackage{amsmath} % easier math formulae, align, subequations \ldots
@@ -167,7 +168,8 @@ First case is z's uncle y is red. In this case we color both the nodes z's paren
 \centerline{\includegraphics{case2,3.png}}\\
 Case 2 is z's uncle y is black and z is a right child\\
 Case 3 is z's uncle y is black and z is a left child\\
-We can change the case 2 to case 3 by doing a left rotation on A. In case 3, B is colored black, C is colored red and a rotation is performed on C making B as root. The algorithm stops here.
+We can change the case 2 to case 3 by doing a left rotation on A. In case 3, B is colored black, C is colored red and a rotation is performed on C making B as root. The algorithm stops here.\\
+*Images taken from Introduction to algorithms, Thomas Cormen, Charles Leierson, Ronald Rivest,  Clifford Stein.
 \section{GPU and OpenCL}
 Graphical Processing Unit(GPU) are high end computing devices. GPU's are used in phones, computers, gaming consoles adn embedded systems. GPU's are especially designed to do SIMD operations effectively. Initially GPU's are used for 3d graphic rendering, later extended to geometric calculations such as rotations and translating vertices to different coordinate systems. GPU's are suited for parallel problems. Atomic operations are possible in GPU at hardware level which are very fast compared to CPU. Hence scientists started studying GPU's for non graphical problems.\\
 Open Computing Language(OpenCL) is a framework to code parallel programs which can be executed across many platforms. OpenCL supports CPU, GPU, FPGA and digital signal processing. Unlike CUDA which is specifically designed for Nvidia GPU, OpenCL supports both Nvidia and Radeon GPU's. OpenCL is based on C99 language.OpenCL views CPU and GPU as computing devices. OpenCL launches a kernel which can be run on any computing device. GPU's have separate memory. Hence pointers on host and GPU are not same. The data structures on host side are sent to kernel using arrays. Tree pointer cannot be sent directly to kernel. Hence a different data structure has to be chosen to implement the tree.
