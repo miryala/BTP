@@ -212,7 +212,7 @@ Rupesh Nasre, Martin Burtscher and Keshav Pingali have described how atomic free
 \section{Conclusion}
 At present, only insertion is done. Deletion has to be implemented. In the present implementation a single node is used as sentinel node. Because of this many threads which have only one sentinel node in common cannot do operations simultaneously.This decreases the performance. So different sentinel nodes can be used and performance can be checked. Since we are getting a step at 10-15\%of nodes, we can insert nodes by sending them in batches of 10\% of nodes.
 
-\section{References}
+\chapter{References}
 \begin{enumerate}  
 \item OpenCL learning: \newblock\\
 https://www.fixstars.com/en/opencl/book/OpenCLProgrammingBook/contents/
@@ -228,6 +228,7 @@ Published in:Proceeding
 GPGPU-6 Proceedings of the 6th Workshop on General Purpose Processor Using Graphics Processing Units
 Pages 96-107 
 ACM New York, NY, USA 2013 
+\item https://en.wikipedia.org/wiki/Red-black\_tree
 \end{enumerate}
 
 \appendix
