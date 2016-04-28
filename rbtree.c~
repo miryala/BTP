@@ -351,8 +351,8 @@ int main(int argc, char **argv)
 	ret = clSetKernelArg(kernel, 9, sizeof(cl_mem), (void *)&sizemobj);
  	ret = clSetKernelArg(kernel, 10, sizeof(cl_mem), (void *)&trackmobj);
 	ret = clSetKernelArg(kernel, 11, sizeof(cl_mem), (void *)&lnmobj);
-	size_t local_item_size = 256;
-	size_t global_item_size = (n/256+1)*256;
+	size_t local_item_size = 64;
+	size_t global_item_size = (n/64+1)*64;
 			
 	/* Execute OpenCL kernel as data parallel */
 	clock_t t1;
