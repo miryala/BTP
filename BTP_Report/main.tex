@@ -157,15 +157,35 @@ By taking logarithms on both sides we can yield\\
 Because of this many operations such as search, minimum, successor, predecessor all take O(lg(n)) time since each operation can be done in O(lg(h)) time. The two main operations of any tree is Insertion and Deletion of nodes. We see how do we restore the properties when a node is inserted or deleted.In our thesis, we will only be looking at insertion.\\
 First we learn about rotations which are very useful in insertion and deletion. There are two types of rotations , Left Rotation and Right Rotation.
 \subsection{Rotations}
-\centerline{\includegraphics{treap-rotation.png}}
+\begin{figure}[h]
+    \centering
+    \includegraphics{treap-rotation.png}
+    \caption{Right and Left Rotations}
+    \label{fig:rotation}
+\end{figure}
 When we insert or delete a node, some properties of RB-Tree might be violated. To restore properties we change colors and also pointer structure of tree. We do this by using Rotations. Rotations preserve the binary search tree properties.\\
-Doing a right rotation at Q made P as root and right child of P became the left child of Q and Q became the right child of P. We can see that binary search tree properties are preserved since Q value is greater than P, it is right child of P and B value is lesser than Q and it is left child of Q. Similarly left rotation can be done. When we do a right rotation on node x, we assume that its left child is not NULL since its left child becomes the new root. Similarly when we do a left rotation, its right child should not be NULL.
+Referring to figure \ref{fig:rotation}, doing a right rotation at Q  made P as root and right child of P became the left child of Q and Q became the right child of P. We can see that binary search tree properties are preserved since Q value is greater than P, it is right child of P and B value is lesser than Q and it is left child of Q. Similarly left rotation can be done. When we do a right rotation on node x, we assume that its left child is not NULL since its left child becomes the new root. Similarly when we do a left rotation, its right child should not be NULL.
 \subsection{Insertion}
 A node can be inserted in O(lg(n)) time. A node is inserted similar to binary tree insertion. The inserted node is colored red. Now coloring the node red might violate one or more properties of RB-Tree. To restore the properties we call function RB-InsertFixup(). We will see wht properties can be violated because of coloring the new node red. Property 1 holds as color is red. Property 3 also holds as every node has 2 sentinel nodes which are black. Property 5 holds as we did not change the black nodes. So only property 2 and 4 can be violated. 2 is violated when inserted node is the root. This can be divided into 3 cases\\
-\centerline{\includegraphics{cse1.png}}
-\centerline{\includegraphics{case1.png}}\\
-First case is z's uncle y is red. In this case we color both the nodes z's parent and uncle black and color grand parent to red.The algorithm is repeated with C as new z.\\
-\centerline{\includegraphics{case2,3.png}}\\
+\begin{figure}[h]
+    \centering
+    \centerline{\includegraphics{cse1.png}}
+    \caption{z's uncle y  is red and z is right child}
+    \label{fig:case1.1}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \centerline{\includegraphics{case1.png}}
+    \caption{z's uncle y is red and z is left child}
+    \label{fig:case1.2}
+\end{figure}\\
+Figures \ref{fig:case1.1} and \ref{fig:case1.2} refer to first case. Z's uncle y is red and z can be either left child or right child. In this case we color both the nodes z's parent and uncle black and color grand parent to red.The algorithm is repeated with C as new z.\\
+\begin{figure}[h]
+    \centering
+    \centerline{\includegraphics{case2,3.png}}
+    \caption{z's uncle y is black and z is either left or right child}
+    \label{fig:case2,3}
+\end{figure}\\
 Case 2 is z's uncle y is black and z is a right child\\
 Case 3 is z's uncle y is black and z is a left child\\
 We can change the case 2 to case 3 by doing a left rotation on A. In case 3, B is colored black, C is colored red and a rotation is performed on C making B as root. The algorithm stops here.\\
@@ -179,8 +199,14 @@ Open Computing Language(OpenCL) is a framework to code parallel programs which c
 \chapter{Parallel RB-trees on GPU}
 A parallel version of RB-Trees is implemented in synchrobench which is a micro-benchmark suite used to evaluate synchronization techniques on data structures.Synchrobench uses transactional memory operations to implement in parallel. The program runs on CPU. Now we want to implement it on GPU. Standard algorithms use linked lists to implement RB-Trees. But passing the data to OpenCL kernel in the form of liked list is a difficult task. Also OpenCL does not support dynamic memory allocation. So, it cannot be implemented as linked lists. So we decided to use arrays to implement the RB-Trees. The graph is represented using 6 arrays, they are Node, LC( Left Child), RC(Right Child), P(Parent Node), C(Color of the Node), L(Lock on the node).Node array has the value of the node. LC, RC, and P points to index of Node array. Color is either 0(black) or 1(Red).L is used to acquire lock on the node. 0th element is used as sentinel node. Sentinel node always has black color.Since nodes are added in an array, we need to use a flag to track the index of the last node inserted. Also a variable 'R' is used which maintains the index of the root node.\\
 Since memory cannot be dynamically allocated on kernel, we initialise the arrays with extra memory.We take command line arguments to specify the number of nodes initial tree should be made of and the number of nodes to be inserted.A work list of nodes to be inserted is created on CPU and sent to kernel. We use a random generator function to generate values to be inserted.\\
-The kernel is launched with threads as many as nodes inserted. Since nodes are inserted parallel, we have to acquire locks to prevent data corruption. We acquire locks on current node, its parent, grand parent and uncle and do operations.\\
-\includegraphics{img1.png}
+The kernel is launched with threads as many as nodes inserted. Since nodes are inserted parallel, we have to acquire locks to prevent data corruption. We acquire locks on current node, its parent, grand parent and uncle and do operations.Image \ref{fig:node_labels} show which nodes are parent, grand parent and uncle.
+\begin{figure}[h]
+    \centering
+    \includegraphics{img1.png}
+    \caption{Image showing which nodes are what}
+    \label{fig:node_labels}
+\end{figure}\\
+
 \lstset{style=mystyle}
 \begin{lstlisting}[language=C]
 if((P[index] == LC[P[P[index]]]) && L[P[index]]==0 && L[P[P[index]]]==0 && L[RC[P[P[index]]]]==0){
@@ -190,8 +216,13 @@ if((P[index] == LC[P[P[index]]]) && L[P[index]]==0 && L[P[P[index]]]==0 && L[RC[
 \end{lstlisting}\\
 In the above snippet of code we can see that first locks are checked normally then we use atomic operations to acquire locks. Since atomic operations are expensive, we don't bother using atomics once we know that a node is already locked. This is an optimisation done on locks.(See appendix for full code)\\
 Every thread tries to acquire locks on four nodes and if it couldn't get the lock, the thread is stopped and the kernel is launched again in next iteration and the thread continues where it stopped. We use a while loop on host side which launches kernel and it stops only after all the nodes are inserted.The locks are acquired in the order of the node index to prevent live locks.\\
-\centerline{\includegraphics{img2.png}}
-Assume situation where 2 threads are operating on nodes A and F. A tries to acquire locks on B,C,E and so do F. Now A acquires lock on B meanwhile F acquires lock on E. Since they cannto get locka on all 3 nodes they halt and same thing might repeat in the next iteration also. To prevent such situation we acquire locks in the order of node indices. Hence both threads first try to get lock on one of nodes and only one succeeds and other thread halts.
+\begin{figure}[h]
+    \centering
+    \includegraphics{img2.png}
+    \caption{Case where live lock can occur}
+    \label{fig:livelock}
+\end{figure}\\
+Referring to figure \ref{fig:livelock}, assume situation where 2 threads are operating on nodes A and F. A tries to acquire locks on B,C,E and so do F. Now A acquires lock on B meanwhile F acquires lock on E. Since they cannto get locka on all 3 nodes they halt and same thing might repeat in the next iteration also. To prevent such situation we acquire locks in the order of node indices. Hence both threads first try to get lock on one of nodes and only one succeeds and other thread halts.
 
 
 
@@ -199,20 +230,31 @@ Assume situation where 2 threads are operating on nodes A and F. A tries to acqu
 
 The code is ran on laptop with NVIDIA Dual SLI GT650M graphic card and 2.6 Ghz processor. It has 8 cores.
 Initially we tried testing the non parallel code on CPU and see the time it takes. A tree is created with 2 lakh nodes. A graph is plotted against the time taken and percentage of nodes inserted.\\
-\centerline{\includegraphics{Graph_seed3.png}}
+\begin{figure}[h]
+    \centering
+    \includegraphics{rsz_graph_seed3.png}
+    \caption{Graph showing time vs \% of nodes.(CPU)}
+    \label{fig:graph_cpu}
+\end{figure}\\
 X-axis is percentage of nodes added\\
 Y-axis is time taken in micro seconds.\\
 The time taken to create initial binary tree with 2 lakh nodes is 71,530 micro seconds.The graph is pretty expected since nodes are added one by one, as number of nodes increases time taken increases linearly. Some points have less time because it might have involved less number of rotations in that particular case.\\
 Next the tree is implemented on GPU and similar graph is plotted.In this case initial tree is created on CPU with 1 lakh nodes and it is sent to the kernel. There nodes are added. The average time taken to create tree on CPU is 70023 micro seconds.This time graph is unexpected.There is a sudden rise in the time taken on GPU at 10-15\%. The reason is not known yet.\\
-\centerline{\includegraphics{Graph_gpu.png}}\\
+\begin{figure}[h]
+    \centering
+    \centerline{\includegraphics{rsz_graph_gpu.png}}
+    \caption{Graph showing time vs \% of nodes.(GPU)}
+    \label{fig:graph_gpu}
+\end{figure}\\
 
 \chapter{Related Work}
-Synchrobench[2] have implemented a benchmark suite where you can test different synchronization techniques on data structures. They have implemented RB-Trees parallelly on CPU using transactional memory operations. You can different statistics like number of nodes inserted in a thread, number locks acquired by a thread, number of values read and written. But GPU has high computing power than CPU. SO many tried implementing parallel graph algorithms on GPU. Algorithms like BFS, SSSP, and MST yielded very good results. 
+Synchrobench[2] has implemented a benchmark suite where you can test different synchronization techniques on data structures.They have used different synchronization techniques like transactional memory operations, locks, read-modify-write and rread-copy-update.They have implemented RB-Trees parallely on CPU using transactional memory operations. You can different statistics like number of nodes inserted in a thread, number locks acquired by a thread, number of values read and written. But GPU has high computing power than CPU. So many tried implementing parallel graph algorithms on GPU. Algorithms like BFS, SSSP, and MST yielded very good results.\\ 
 Rupesh Nasre, Martin Burtscher and Keshav Pingali have described how atomic free algorithms can be developed. They described how atomics can be avoided using barriers and exploiting the algebraic properties of algorithms. They describe 3 properties monotonicity, idem-potency and associativity which enables atomic free implementation.
-\section{Conclusion}
+\chapter{Conclusion}
 At present, only insertion is done. Deletion has to be implemented. In the present implementation a single node is used as sentinel node. Because of this many threads which have only one sentinel node in common cannot do operations simultaneously.This decreases the performance. So different sentinel nodes can be used and performance can be checked. Since we are getting a step at 10-15\%of nodes, we can insert nodes by sending them in batches of 10\% of nodes.
 
-\chapter{References}
+\thebibliography
+
 \begin{enumerate}  
 \item OpenCL learning: \newblock\\
 https://www.fixstars.com/en/opencl/book/OpenCLProgrammingBook/contents/
