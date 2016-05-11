@@ -159,7 +159,7 @@ First we learn about rotations which are very useful in insertion and deletion. 
 \subsection{Rotations}
 \begin{figure}[h]
     \centering
-    \includegraphics{treap-rotation.png}
+    \includegraphics{rsz_treap-rotation.png}
     \caption{Right and Left Rotations}
     \label{fig:rotation}
 \end{figure}
@@ -169,27 +169,27 @@ Referring to figure \ref{fig:rotation}, doing a right rotation at Q  made P as r
 A node can be inserted in O(lg(n)) time. A node is inserted similar to binary tree insertion. The inserted node is colored red. Now coloring the node red might violate one or more properties of RB-Tree. To restore the properties we call function RB-InsertFixup(). We will see wht properties can be violated because of coloring the new node red. Property 1 holds as color is red. Property 3 also holds as every node has 2 sentinel nodes which are black. Property 5 holds as we did not change the black nodes. So only property 2 and 4 can be violated. 2 is violated when inserted node is the root. This can be divided into 3 cases\\
 \begin{figure}[h]
     \centering
-    \centerline{\includegraphics{cse1.png}}
+    \centerline{\includegraphics{rsz_cse1.png}}
     \caption{z's uncle y  is red and z is right child}
     \label{fig:case1.1}
 \end{figure}
 \begin{figure}[h]
     \centering
-    \centerline{\includegraphics{case1.png}}
+    \centerline{\includegraphics{rsz_case1.png}}
     \caption{z's uncle y is red and z is left child}
     \label{fig:case1.2}
 \end{figure}\\
 Figures \ref{fig:case1.1} and \ref{fig:case1.2} refer to first case. Z's uncle y is red and z can be either left child or right child. In this case we color both the nodes z's parent and uncle black and color grand parent to red.The algorithm is repeated with C as new z.\\
 \begin{figure}[h]
     \centering
-    \centerline{\includegraphics{case2,3.png}}
-    \caption{z's uncle y is black and z is either left or right child}
+    \centerline{\includegraphics{rsz_case23.png}}
+    \caption{z's uncle y is black and z is either left or right child\\Images taken from Introduction to algorithms book and redrawn}
     \label{fig:case2,3}
 \end{figure}\\
 Case 2 is z's uncle y is black and z is a right child\\
 Case 3 is z's uncle y is black and z is a left child\\
 We can change the case 2 to case 3 by doing a left rotation on A. In case 3, B is colored black, C is colored red and a rotation is performed on C making B as root. The algorithm stops here.\\
-*Images taken from Introduction to algorithms, Thomas Cormen, Charles Leierson, Ronald Rivest,  Clifford Stein.
+
 \section{GPU and OpenCL}
 Graphical Processing Unit(GPU) are high end computing devices. GPU's are used in phones, computers, gaming consoles adn embedded systems. GPU's are especially designed to do SIMD operations effectively. Initially GPU's are used for 3d graphic rendering, later extended to geometric calculations such as rotations and translating vertices to different coordinate systems. GPU's are suited for parallel problems. Atomic operations are possible in GPU at hardware level which are very fast compared to CPU. Hence scientists started studying GPU's for non graphical problems.\\
 Open Computing Language(OpenCL) is a framework to code parallel programs which can be executed across many platforms. OpenCL supports CPU, GPU, FPGA and digital signal processing. Unlike CUDA which is specifically designed for Nvidia GPU, OpenCL supports both Nvidia and Radeon GPU's. OpenCL is based on C99 language.OpenCL views CPU and GPU as computing devices. OpenCL launches a kernel which can be run on any computing device. GPU's have separate memory. Hence pointers on host and GPU are not same. The data structures on host side are sent to kernel using arrays. Tree pointer cannot be sent directly to kernel. Hence a different data structure has to be chosen to implement the tree.
@@ -248,7 +248,7 @@ Next the tree is implemented on GPU and similar graph is plotted.In this case in
 \end{figure}\\
 
 \chapter{Related Work}
-Synchrobench[2] has implemented a benchmark suite where you can test different synchronization techniques on data structures.They have used different synchronization techniques like transactional memory operations, locks, read-modify-write and rread-copy-update.They have implemented RB-Trees parallely on CPU using transactional memory operations. You can different statistics like number of nodes inserted in a thread, number locks acquired by a thread, number of values read and written. But GPU has high computing power than CPU. So many tried implementing parallel graph algorithms on GPU. Algorithms like BFS, SSSP, and MST yielded very good results.\\ 
+Synchrobench [2] has implemented a benchmark suite where you can test different synchronization techniques on data structures.They have used different synchronization techniques like transactional memory operations, locks, read-modify-write and rread-copy-update.They have implemented RB-Trees parallely on CPU using transactional memory operations. You can different statistics like number of nodes inserted in a thread, number locks acquired by a thread, number of values read and written. But GPU has high computing power than CPU. So many tried implementing parallel graph algorithms on GPU. Algorithms like BFS, SSSP, and MST yielded very good results.\\ 
 Rupesh Nasre, Martin Burtscher and Keshav Pingali have described how atomic free algorithms can be developed. They described how atomics can be avoided using barriers and exploiting the algebraic properties of algorithms. They describe 3 properties monotonicity, idem-potency and associativity which enables atomic free implementation.
 \chapter{Conclusion}
 At present, only insertion is done. Deletion has to be implemented. In the present implementation a single node is used as sentinel node. Because of this many threads which have only one sentinel node in common cannot do operations simultaneously.This decreases the performance. So different sentinel nodes can be used and performance can be checked. Since we are getting a step at 10-15\%of nodes, we can insert nodes by sending them in batches of 10\% of nodes.
